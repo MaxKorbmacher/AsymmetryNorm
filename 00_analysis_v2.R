@@ -20,7 +20,7 @@
 rm(list = ls(all.names = TRUE)) # clear all objects includes hidden objects.
 gc() #free up memory and report the memory usage.
 # define the savepath
-savepath = "/Users/max/Documents/Local/MS/NormativeModels/Asymmetry/results/"
+savepath = "/your/path/"
 #
 # 0.1 Data wrangling----------------
 # load packages
