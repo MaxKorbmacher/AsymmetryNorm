@@ -3,7 +3,7 @@
 #
 # by Max Korbmacher, max.korbmacher@gmail.com
 # Created: 3 July 2025
-# Last change: 3 July 2025
+# Last change: 29 Sep 2025
 #
 # ------------------------------------------ #
 #                 Contents
@@ -28,11 +28,16 @@ pacman::p_load(tidyverse,mfp,neuroCombat,MatchIt)
 df = read.csv("/Users/max/Documents/Local/Data/Lifespan/cortical_subcortical.csv")
 ms = read.csv("/Users/max/Documents/Local/Data/Lifespan/MS_long.csv")
 # data wrangling
+ms <- ms %>%
+  group_by(eid) %>%
+  arrange(session) %>%
+  slice(1) %>%
+  ungroup()
 names(df)[names(df) == "Left.Thalamus.Proper"] = "Left.Thalamus"
 names(df)[names(df) == "Right.Thalamus.Proper"] = "Right.Thalamus"
 #
-cross = df %>% filter(session != 2 & session != 3 & diagnosis == "HC")
-cross = cross %>% filter(diagnosis == "HC")
+cross = df %>% filter(session != 2 & session != 3)
+#cross = cross %>% filter(diagnosis == "HC")
 cross$sex = ifelse(cross$sex == "F" | cross$sex == "Female","female","male")
 # provide some summary stats of the healthy control sample (including both training and test/HC participants)
 cross %>% group_by(data) %>% summarize(N = length(na.omit(age)), M = mean(na.omit(age)), SD = sd(na.omit(age)), Min = min(na.omit(age)), Max = max(na.omit(age)))
@@ -43,7 +48,7 @@ left = ms %>% select(contains("lh_") | contains("Left"))
 right = ms %>% select(contains("rh_") | contains("Right"))
 brain = left-right
 long = cbind(ms%>%select(eid,EstimatedTotalIntraCranialVol,sex,age, edss,scanner,session,data),brain)
-write.csv(x = long,file=paste(savepath,"long.csv",sep=""))
+#write.csv(x = long,file=paste(savepath,"long.csv",sep=""))
 
 ## cross
 left = cross %>% select(contains("lh_") | contains("Left"))
@@ -51,33 +56,39 @@ right = cross %>% select(contains("rh_") | contains("Right"))
 brain = left-right
 cross = cbind(cross[,c(names(cross[84:90]),"EstimatedTotalIntraCranialVol")],brain)
 
+cross = cross %>% select(-session)
+cross = cross %>% filter(diagnosis != "OTHER")
+
 
 # split off test data
 ms$diagnosis = "MS"
-cross$diagnosis = "HC"
-cross = rbind(ms %>% filter(session == 1) %>% select(names(cross)),cross)
+#cross$diagnosis = "HC"
+cross = rbind(ms %>% select(names(cross)),cross)
 cross = na.omit(cross)
-# 1:1 NN PS matching w/o replacement
-m.out = matchit(factor(diagnosis) ~ age + sex + EstimatedTotalIntraCranialVol,
-                data = cross,
-                method = "nearest",
-                distance = "glm")
-m.out = match_data(m.out)
-write.csv(x = m.out,file = paste(savepath,"cross_MSvsHC.csv",sep=""))
-#
-#
-# filter out the test data
-cross = cross[!cross$eid %in% m.out$eid,]
-table(cross$sex)/nrow(cross)
+cross$disorder = ifelse(cross$diagnosis != "HC", 1, 0)
+
 #
 # harmonize
-covars = cross %>% dplyr::select(eid,sex,scanner,age,data)
+covars = cross %>% dplyr::select(eid,sex,scanner,age,data, diagnosis, disorder)
 #covars$sex = ifelse(covars$sex == "F" | covars$sex == "Female",0,1)
 datasets = covars$data
 covars$data = as.numeric(factor(cross$data))
 cross = neuroCombat(t(cross%>%dplyr::select(EstimatedTotalIntraCranialVol,starts_with("Left"),starts_with("Right"), starts_with("lh"),starts_with("rh"))),batch=as.numeric(factor(cross$scanner)),mod=model.matrix(~covars$age+covars$sex), mean.only = T)
 cross = data.frame(t(cross$dat.combat))
 cross = cbind(covars,cross)
+#
+# Age and sex matching
+m.out = matchit(disorder ~ age + sex,
+                data = cross,
+                method = "nearest",
+                distance = "glm")
+m.out = match_data(m.out)
+write.csv(x = m.out,file = paste(savepath,"Test_Data.csv",sep=""))
+#
+#
+# filter out the test data
+cross = cross[!cross$eid %in% m.out$eid,]
+write.csv(x = cross,file = paste(savepath,"Training_Data.csv",sep=""))
 #
 #
 # sex-split
