@@ -82,7 +82,7 @@ cd /path/to/folder
 ### 3. Z-score Calculation
 ```bash
 # Using predicted values and training RMSE
-Rscript calculate_z_scores.R output.csv output_rmse.csv Zscores.csv
+Rscript calculate_z_scores.R output.csv rmse.csv Zscores.csv
 ```
 Z-scores are computed as:
 $Z = \frac{y - \hat{y}}{RMSE}$
@@ -104,7 +104,7 @@ where $y$ = observed volume, $\hat{y}$ = predicted volume, and RMSE = the root m
 
 - Subcortical volumes are currently not merged automatically in the provided merge.py script; the focus is on cortical volumes. However, the models are provided for both.
 - You can retrain models using `MFPR.R` and recompute RMSE with `calculate_training_rmse.R`.
-- Provided `output_rmse.csv` can be used if you skip retraining.
+- Provided `rmse.csv` can be used if you skip retraining.
 
 ---
 
