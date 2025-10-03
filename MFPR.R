@@ -20,13 +20,13 @@
 # clean up
 rm(list = ls(all.names = TRUE)) # clear all objects includes hidden objects.
 gc() #free up memory and report the memory usage.
-savepath = "/Users/max/Documents/Local/MS/NormativeModels/Asymmetry/results/" # define results/save/oputput path
+savepath = "/your/path/" # define results/save/oputput path
 # load packages with pacman
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(tidyverse,mfp,neuroCombat,MatchIt)
 # load data
-df = read.csv("/Users/max/Documents/Local/Data/Lifespan/cortical_subcortical.csv")
-ms = read.csv("/Users/max/Documents/Local/Data/Lifespan/MS_long.csv")
+df = read.csv("cortical_subcortical.csv")
+ms = read.csv("Lifespan/MS_long.csv")
 # data wrangling
 ms <- ms %>%
   group_by(eid) %>%
