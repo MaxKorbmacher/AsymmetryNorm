@@ -36,6 +36,7 @@ ms <- ms %>%
 names(df)[names(df) == "Left.Thalamus.Proper"] = "Left.Thalamus"
 names(df)[names(df) == "Right.Thalamus.Proper"] = "Right.Thalamus"
 #
+df$session = ifelse(is.na(df$session) == T, 1, df$session)
 cross = df %>% filter(session != 2 & session != 3)
 #cross = cross %>% filter(diagnosis == "HC")
 cross$sex = ifelse(cross$sex == "F" | cross$sex == "Female","female","male")
@@ -64,12 +65,13 @@ cross = cross %>% filter(diagnosis != "OTHER")
 ms$diagnosis = "MS"
 #cross$diagnosis = "HC"
 cross = rbind(ms %>% select(names(cross)),cross)
+cross$session = 1
 cross = na.omit(cross)
-cross$disorder = ifelse(cross$diagnosis != "HC", 1, 0)
+
 
 #
 # harmonize
-covars = cross %>% dplyr::select(eid,sex,scanner,age,data, diagnosis, disorder)
+covars = cross %>% dplyr::select(eid,sex,scanner,age,data, diagnosis)
 #covars$sex = ifelse(covars$sex == "F" | covars$sex == "Female",0,1)
 datasets = covars$data
 covars$data = as.numeric(factor(cross$data))
@@ -77,6 +79,7 @@ cross = neuroCombat(t(cross%>%dplyr::select(EstimatedTotalIntraCranialVol,starts
 cross = data.frame(t(cross$dat.combat))
 cross = cbind(covars,cross)
 #
+cross$disorder =  ifelse(cross$diagnosis == "HC", 0, 1)
 # Age and sex matching
 m.out = matchit(disorder ~ age + sex,
                 data = cross,
